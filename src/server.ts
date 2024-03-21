@@ -6,7 +6,7 @@ import apiRoutes from './routes/routes';
 
 dotenv.config();
 
-const server = express();
+export const server = express();
 
 server.use(cors());
 
