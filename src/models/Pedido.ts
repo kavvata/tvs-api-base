@@ -33,7 +33,7 @@ export const Pedido = sequelize.define<PedidoInstance>('Pedido', {
     timestamps: false
 });
 
-
+// Defina a associação corretamente
 Pedido.belongsTo(Cliente, { foreignKey: 'id_cliente' });
 Pedido.hasMany(ItemDoPedido, { foreignKey: 'id_pedido' });
 Pedido.hasMany(ItemDoPedido, { foreignKey: 'id_pedido', as: 'ItensDoPedido' });

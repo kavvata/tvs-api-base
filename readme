@@ -3,7 +3,8 @@ Para rodar o projeto
 Instalar as dependencias com:
 npm install
 
-(as vezes é necessário instalar algumas dependencias separadas)
-
 Rodar com:
 npm run start-dev
+
+Criar a migration com o sequelize: 
+npm sequelize-cli db:migrate

@@ -1,35 +1,44 @@
-import express, { Request, Response, ErrorRequestHandler } from 'express';
-import path from 'path';
-import dotenv from 'dotenv';
-import cors from 'cors';
-import apiRoutes from './routes/routes';
+import express, { Request, Response, ErrorRequestHandler } from "express";
+import path from "path";
+import dotenv from "dotenv";
+import cors from "cors";
+import apiRoutes from "./routes/routes";
 
 dotenv.config();
 
-export const server = express();
+const app = express(); // Crie a instância do Express
 
-server.use(cors());
+app.use(cors());
 
-server.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, "../public")));
 
 //AQUI EU DIGO O FORMATO QUE EU QUERO A REQUISIÇÃO
-//server.use(express.urlencoded({ extended: true })); // USANDO URL ENCODED
-server.use(express.json()); //USANDO JSON
+//app.use(express.urlencoded({ extended: true })); // USANDO URL ENCODED
+app.use(express.json()); //USANDO JSON
 
-server.get('/ping', (req: Request, res: Response) => res.json({ pong: true }));
+app.get("/ping", (req: Request, res: Response) => res.json({ pong: true }));
 
-server.use(apiRoutes);
+app.use(apiRoutes);
 
-server.use((req: Request, res: Response) => {
-    res.status(404);
-    res.json({ error: 'Endpoint não encontrado.' });
+app.use((req: Request, res: Response) => {
+  res.status(404);
+  res.json({ error: "Endpoint não encontrado." });
 });
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-    res.status(400); // Bad Request
-    console.log(err);
-    res.json({ error: 'Ocorreu algum erro.' });
-}
-server.use(errorHandler);
+  res.status(400); // Bad Request
+  console.log(err);
+  res.json({ error: "Ocorreu algum erro." });
+};
+app.use(errorHandler);
 
-server.listen(process.env.PORT);
+// Exporta a instância do Express
+export { app };
+
+// Inicia o servidor somente se não estiver no ambiente de teste
+if (process.env.NODE_ENV !== "test") {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+  });
+}
