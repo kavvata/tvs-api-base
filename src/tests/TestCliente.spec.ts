@@ -48,12 +48,18 @@ describe("Teste da Rota incluirCliente", () => {
 });
 
 describe("Teste da Rota GetClienteById", () => {
+  let clienteId: number;
+
+  beforeAll(async () => {
+    const cliente = await Cliente.create({ nome: "Teste", sobrenome: "Cliente", cpf: "00000000000" });
+    clienteId = cliente.id
+  })
+
   it("Deve retornar o cliente correto quando o id é valido", async () => {
-    const idCliente = 1; // Supondo que este seja um Id válido existente no seu banco de dados
-    const response = await request(app).get(`/clientes/${idCliente}`);
+    const response = await request(app).get(`/clientes/${clienteId}`);
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty("id", idCliente);
+    expect(response.body).toHaveProperty("id", clienteId);
   });
 
   it("Deve retornar um status 404 quando o Id do cliente nao existe", async () => {
@@ -63,6 +69,13 @@ describe("Teste da Rota GetClienteById", () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toHaveProperty("message", "Cliente não encontrado");
+  });
+
+  afterAll(async () => {
+    // Remove o cliente criado no teste
+    if (clienteId) {
+      await Cliente.destroy({ where: { id: clienteId } });
+    }
   });
 });
 
