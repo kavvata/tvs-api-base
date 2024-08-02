@@ -33,7 +33,7 @@ describe("Teste da Rota GetProdutoById", () => {
   let produtoId: number;
 
   beforeAll(async () => {
-    const produto = await Produto.create({descricao: "Produto Teste"})
+    const produto = await Produto.create({ descricao: "Produto Teste" })
     produtoId = produto.id
   })
 
@@ -81,7 +81,7 @@ describe("Teste da Rota listarProdutos", () => {
 
 describe("Teste da Rota excluirProduto", () => {
   beforeAll(async () => {
-    await Produto.create({id: 420, descricao: "Produto Teste"});
+    await Produto.create({ id: 420, descricao: "Produto Teste" });
     // Adicione lógica para garantir que não há pedidos vinculados, se necessário
   });
 
@@ -106,7 +106,7 @@ describe("Teste da Rota atualizarProduto", () => {
   let produtoId: number;
 
   beforeAll(async () => {
-    const produto = await Produto.create({descricao: "Produto Teste"})
+    const produto = await Produto.create({ descricao: "Produto Teste" })
     produtoId = produto.id
   })
 

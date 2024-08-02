@@ -34,13 +34,13 @@ export const listarPedidos = async (req: Request, res: Response) => {
 
       const itensDoPedidoFormatados = pedido.ItensDoPedido
         ? pedido.ItensDoPedido.map((itemDoPedido) => ({
-            id: itemDoPedido.id,
-            qtdade: itemDoPedido.qtdade,
-            produto: {
-              id: itemDoPedido.id_produto,
-              descricao: itemDoPedido.Produto ? itemDoPedido.Produto.descricao : "",
-            },
-          }))
+          id: itemDoPedido.id,
+          qtdade: itemDoPedido.qtdade,
+          produto: {
+            id: itemDoPedido.id_produto,
+            descricao: itemDoPedido.Produto ? itemDoPedido.Produto.descricao : "",
+          },
+        }))
         : [];
 
       return {
