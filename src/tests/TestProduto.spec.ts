@@ -46,9 +46,7 @@ describe("Teste da Rota GetProdutoById", () => {
   });
 
   it("Deve retornar um status 404 quando o Id do produto nao existe", async () => {
-    produtoId = produtoId + 1
-
-    const response = await request(app).get(`/produtos/${produtoId}`);
+    const response = await request(app).get(`/produtos/${produtoId + 1}`);
 
     expect(response.status).toBe(404);
     expect(response.body).toHaveProperty("message", "Produto não encontrado");
