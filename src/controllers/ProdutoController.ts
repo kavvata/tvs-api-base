@@ -6,6 +6,11 @@ import { Pedido } from "../models/Pedido";
 export const listarProdutos = async (req: Request, res: Response) => {
   try {
     const produtos = await Produto.findAll();
+    if (produtos.length === 0) {
+      res.status(404).json({ menssage: "Nenhum Produto Encontrado." })
+    } else {
+      res.json({ pedidos: produtos });
+    }
     res.json({ produtos });
   } catch (error) {
     console.error("Erro ao listar produtos:", error);

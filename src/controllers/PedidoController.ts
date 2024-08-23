@@ -1,122 +1,163 @@
 import { Request, Response } from "express";
-import { Produto, ProdutoInstance } from "../models/Produto";
-import { Cliente, ClienteInstance } from "../models/Cliente";
-import { Pedido, PedidoInstance } from "../models/Pedido";
+import { Produto } from "../models/Produto";
+import { Pedido } from "../models/Pedido";
 import { ItemDoPedido } from "../models/ItemDoPedido";
+import { Cliente } from "../models/Cliente";
 
-export const listarPedidos = async (req: Request, res: Response) => {
+export const getItemDoPedidoById = async (req: Request, res: Response) => {
   try {
-    const pedidos = await Pedido.findAll({
+    const itemId = parseInt(req.params.id, 10);
+
+    // Inclua Produto, Pedido e Cliente associados com os aliases corretos
+    const itemDoPedido = await ItemDoPedido.findByPk(itemId, {
       include: [
         {
-          model: Cliente,
+          model: Produto,
+          as: "Produto", // Use o alias correto aqui
+          attributes: ["id", "descricao"] // Ajuste os atributos conforme necessário
         },
         {
-          model: ItemDoPedido,
-          as: "ItensDoPedido",
+          model: Pedido,
+          as: "Pedido", // Use o alias correto aqui
+          attributes: ["id", "data", "id_cliente"], // Ajuste os atributos conforme necessário
           include: [
             {
-              model: Produto,
-              attributes: ["id", "descricao"],
-            },
-          ],
-        },
-      ],
+              model: Cliente,
+              as: "Cliente", // Use o alias correto aqui
+              attributes: ["id", "nome", "sobrenome", "cpf"] // Ajuste os atributos conforme necessário
+            }
+          ]
+        }
+      ]
     });
-    // Mapeia o resultado para formatar a resposta conforme desejado
-    const pedidosFormatados = pedidos.map((pedido: PedidoInstance) => {
-      const clienteFormatado = {
-        id: pedido.Cliente.id,
-        nome: pedido.Cliente.nome,
-        sobrenome: pedido.Cliente.sobrenome,
-        cpf: pedido.Cliente.cpf,
-      } as ClienteInstance;
 
-      const itensDoPedidoFormatados = pedido.ItensDoPedido
-        ? pedido.ItensDoPedido.map((itemDoPedido) => ({
+    if (itemDoPedido) {
+      // Formata a resposta para incluir as informações do cliente
+      const respostaFormatada = {
+        itemDoPedido: {
           id: itemDoPedido.id,
           qtdade: itemDoPedido.qtdade,
-          produto: {
-            id: itemDoPedido.id_produto,
-            descricao: itemDoPedido.Produto ? itemDoPedido.Produto.descricao : "",
-          },
-        }))
-        : [];
-
-      return {
-        id: pedido.id,
-        data: pedido.data,
-        cliente: clienteFormatado,
-        itensDoPedido: itensDoPedidoFormatados,
+          produto: itemDoPedido.Produto
+            ? {
+                id: itemDoPedido.Produto.id,
+                descricao: itemDoPedido.Produto.descricao
+              }
+            : null,
+          pedido: itemDoPedido.Pedido
+            ? {
+                id: itemDoPedido.Pedido.id,
+                data: itemDoPedido.Pedido.data,
+                cliente: itemDoPedido.Pedido.Cliente
+                  ? {
+                      id: itemDoPedido.Pedido.Cliente.id,
+                      nome: itemDoPedido.Pedido.Cliente.nome,
+                      sobrenome: itemDoPedido.Pedido.Cliente.sobrenome,
+                      cpf: itemDoPedido.Pedido.Cliente.cpf
+                    }
+                  : null
+              }
+            : null
+        }
       };
+
+      res.json(respostaFormatada);
+    } else {
+      res.status(404).json({ message: "Item do Pedido não encontrado" });
+    }
+  } catch (error) {
+    console.error("Erro ao buscar item do pedido:", error);
+    res.status(500).json({ message: "Erro ao buscar item do pedido" });
+  }
+};
+
+export const listarItensDoPedido = async (req: Request, res: Response) => {
+  try {
+    const itensDoPedido = await ItemDoPedido.findAll({
+      include: [
+        {
+          model: Produto,
+          as: "Produto",
+          attributes: ["id", "descricao"]
+        },
+        {
+          model: Pedido,
+          as: "Pedido",
+          attributes: ["id", "data", "id_cliente"]
+        }
+      ]
     });
 
-    res.json({ pedidos: pedidosFormatados });
+    res.json({ itensDoPedido });
   } catch (error) {
-    console.error("Erro ao listar pedidos:", error);
-    res.status(500).json({ message: "Erro ao listar pedidos" });
+    console.error("Erro ao listar itens do pedido:", error);
+    res.status(500).json({ message: "Erro ao listar itens do pedido" });
   }
 };
-export const getPedidoById = async (req: Request, res: Response) => {
-  try {
-    const pedidoId = parseInt(req.params.idPedido, 10);
-    const pedido = await Pedido.findByPk(pedidoId);
 
-    if (pedido) {
-      res.json(pedido);
+export const incluirItemDoPedido = async (req: Request, res: Response) => {
+  try {
+    const { id_pedido, id_produto, qtdade } = req.body;
+
+    // Certifique-se de que o pedido e o produto existem antes de criar o item do pedido
+    const pedidoExistente = await Pedido.findByPk(id_pedido);
+    const produtoExistente = await Produto.findByPk(id_produto);
+
+    if (!pedidoExistente || !produtoExistente) {
+      return res.status(404).json({ message: "Pedido ou Produto não encontrado" });
+    }
+
+    const novoItemDoPedido = await ItemDoPedido.create({
+      id_pedido: parseInt(id_pedido),
+      id_produto: parseInt(id_produto),
+      qtdade: parseInt(qtdade)
+    });
+    res.status(201).json(novoItemDoPedido);
+  } catch (error) {
+    console.error("Erro ao incluir item do pedido:", error);
+    res.status(500).json({ message: "Erro ao incluir item do pedido" });
+  }
+};
+
+export const atualizarItemDoPedido = async (req: Request, res: Response) => {
+  try {
+    const itemId = parseInt(req.params.id, 10);
+    const { id_pedido, id_produto, qtdade } = req.body;
+
+    const itemDoPedido = await ItemDoPedido.findByPk(itemId);
+
+    if (itemDoPedido) {
+      // Certifique-se de que o pedido e o produto existem antes de atualizar o item do pedido
+      const pedidoExistente = await Pedido.findByPk(id_pedido);
+      const produtoExistente = await Produto.findByPk(id_produto);
+
+      if (!pedidoExistente || !produtoExistente) {
+        return res.status(404).json({ message: "Pedido ou Produto não encontrado" });
+      }
+
+      await itemDoPedido.update({ id_pedido, id_produto, qtdade });
+      res.json(itemDoPedido);
     } else {
-      res.status(404).json({ message: "Pedido não encontrado" });
+      res.status(404).json({ message: "Item do Pedido não encontrado" });
     }
   } catch (error) {
-    console.error("Erro ao buscar pedido:", error);
-    res.status(500).json({ message: "Erro ao buscar pedido" });
+    console.error("Erro ao atualizar item do pedido:", error);
+    res.status(500).json({ message: "Erro ao atualizar item do pedido" });
   }
 };
 
-export const incluirPedido = async (req: Request, res: Response) => {
+export const excluirItemDoPedido = async (req: Request, res: Response) => {
   try {
-    const { data, id_cliente } = req.body;
-    const novoPedido = await Pedido.create({ data, id_cliente });
+    const itemId = parseInt(req.params.id, 10);
+    const itemDoPedido = await ItemDoPedido.findByPk(itemId);
 
-    res.status(201).json(novoPedido);
-  } catch (error) {
-    console.error("Erro ao incluir pedido:", error);
-    res.status(500).json({ message: "Erro ao incluir pedido" });
-  }
-};
-
-export const atualizarPedido = async (req: Request, res: Response) => {
-  try {
-    const pedidoId = parseInt(req.params.id, 10);
-    const { data, id_cliente } = req.body;
-
-    const pedido = await Pedido.findByPk(pedidoId);
-
-    if (pedido) {
-      await pedido.update({ data, id_cliente });
-      res.json(pedido);
+    if (itemDoPedido) {
+      await itemDoPedido.destroy();
+      res.json({ message: "Item do Pedido excluído com sucesso" });
     } else {
-      res.status(404).json({ message: "Pedido não encontrado" });
+      res.status(404).json({ message: "Item do Pedido não encontrado" });
     }
   } catch (error) {
-    console.error("Erro ao atualizar pedido:", error);
-    res.status(500).json({ message: "Erro ao atualizar pedido" });
-  }
-};
-
-export const excluirPedido = async (req: Request, res: Response) => {
-  try {
-    const pedidoId = parseInt(req.params.id, 10);
-    const pedido = await Pedido.findByPk(pedidoId);
-
-    if (pedido) {
-      await pedido.destroy();
-      res.json({ message: "Pedido excluído com sucesso" });
-    } else {
-      res.status(404).json({ message: "Pedido não encontrado" });
-    }
-  } catch (error) {
-    console.error("Erro ao excluir pedido:", error);
-    res.status(500).json({ message: "Erro ao excluir pedido" });
+    console.error("Erro ao excluir item do pedido:", error);
+    res.status(500).json({ message: "Erro ao excluir item do pedido" });
   }
 };
